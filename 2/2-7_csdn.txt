@@ -1,0 +1,68 @@
+解决方案1：
+作者给出的解答是：为每条记录插入列号和行号，然后调用系统的磁带排序程序先按列排序再按行排序，最后使用另一个程序删除列号和行号。
+我这里依照这个思路，实现了一个类似的代码，当然这里仅仅是演示原理而已！代码如下：
+
+#include <cstdio>
+#include <cstdlib>      // qsort
+#include <cstring>      // strlen
+#include <cassert>      // assert
+
+#define     MATRIXLEN   8    // 矩阵长度
+
+#define error( str )         fatal_error( str )
+#define fatal_error( str )   fprintf( stderr, "%s\n", str ), exit( 1 )
+
+typedef struct {
+    int row;         // 行号
+    int column;     // 列号
+    int value;        // 值
+} Data;
+
+Data matrix[MATRIXLEN*2] = {0};
+
+int datacomp1(const void* a, const void* b)
+{
+    return  ((Data*)a)->row - ((Data*)b)->row;
+}
+
+int datacomp2(const void* a, const void* b)
+{
+    return ((Data*)a)->column - ((Data*)b)->column ;
+}
+
+int main()
+{
+    FILE* rfile = fopen("matrix.txt", "r");
+    if (NULL ==  rfile){ fatal_error("不能打开matrix.txt文件！\n"); }
+
+    printf("请输入一个矩阵：\n");
+
+    // 从文件中读取数据
+    Data data;
+    int index = 0, cur_row = 0, cur_column = 0;
+    while(fscanf(rfile, "%d", &data.value) != EOF){
+        if (index != 0 && index % 4 == 0){ cur_row++; cur_column = 0; }
+
+        data.row = cur_row;
+        data.column = cur_column++;
+
+        matrix[index++] = data;
+    }
+
+    // 列排序
+    qsort(matrix, MATRIXLEN * 2, sizeof(Data), datacomp2);
+
+    // 行排序(列相等情况下)
+    for (int i = 0; i < MATRIXLEN*2; i += 4){
+        qsort(&matrix[i], 4, sizeof(Data), datacomp1);
+    }
+
+    printf("该矩阵的转置矩阵是：\n");
+    // 打印
+    for (int i = 0; i < MATRIXLEN*2; i++){
+        if (i != 0 && i % 4 == 0) { printf("\n"); }
+        printf("%d\t", matrix[i].value);
+    }
+
+    return 0;
+}
